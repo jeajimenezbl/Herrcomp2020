@@ -1,4 +1,8 @@
 Lista
--nombre1	codigo1
--nombre2	codigo2
+-Nombre1	codigo1
+-Nombre2	codigo2
 -.......
+Tareas
+-tarea1		Descripción
+-tarea2 	Descripción
+- ........................
