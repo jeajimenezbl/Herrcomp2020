@@ -6,9 +6,10 @@ void initial_conditions(Particle & body)
 {
   body.Rx = 0.3;
   body.Ry = 1.6;
+  body.Rz = 0.3;
   body.Vx = 2.0;
   body.Vy = 3.0;
-  body.Vz = 0.0;
+  body.Vz = 2.0;
 
   body.rad = 0.235;
   body.mass = 0.29698;
@@ -29,6 +30,14 @@ void compute_force(Particle & body)
     //body.Fy -= 0.2*body.Vy;
   }
 
+  // force with up wall
+  double LY = 2.01;
+  delta = body.Ry + body.rad - LY;
+  if (delta > 0) {
+    body.Fy -= K*delta;
+    //body.Fy -= 0.2*body.Vy;
+  }
+     
   // force with right wall
   double LX = 2.01;
   delta = body.Rx + body.rad - LX;
@@ -44,16 +53,23 @@ void compute_force(Particle & body)
     body.Fx -= K*delta;
     //body.Fx -= 0.2*body.Vx;
   }
-  
-  // force with up wall
-  double LY = 2.01;
-  delta = body.Ry + body.rad - LY;
+   
+  // force with front wall
+  double LZ = 2.01;
+  delta = body.Rz + body.rad - LZ;
   if (delta > 0) {
-    body.Fy -= K*delta;
-    //body.Fy -= 0.2*body.Vy;
+    body.Fz -= K*delta;
+    //body.Fz -= 0.2*body.Vz;
   }
-     
- 
+  
+  // force with back wall
+  
+  delta = body.Rz - body.rad ;
+  if (delta < 0) {
+    body.Fz -= K*delta;
+    //body.Fz -= 0.2*body.Vz;
+  }
+  
 
 }
 
