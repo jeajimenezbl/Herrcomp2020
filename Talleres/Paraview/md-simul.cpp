@@ -4,30 +4,33 @@
 
 void initial_conditions(Particle & body)
 {
-  body.Rx = 0.3;
-  body.Ry = 1.6;
-  body.Rz = 0.3;
-  body.Vx = 2.0;
-  body.Vy = 3.0;
-  body.Vz = 2.0;
+  body.Rx = 1.0;
+  body.Ry = 1.0;
+  body.Rz = 1.0;
+  body.Vx = 1.0;
+  body.Vy = 5.0;
+  body.Vz = 1.0;
 
-  body.rad = 0.235;
-  body.mass = 0.29698;
+  body.rad = 0.25;
+  body.mass = 0.3;
 }
 
 void compute_force(Particle & body)
 {
   // reset force
   body.Fx = body.Fy = body.Fz = 0.0;
+  body.U = 0.0;
 
   // gravitational force
   body.Fy += body.mass*G;
+  body.U += -body.mass*G*body.Ry;
 
   // force with ground
   double delta = body.rad - body.Ry;
   if (delta > 0) {
     body.Fy += K*delta;
-    //body.Fy -= 0.2*body.Vy;
+    body.U += -0.5*K*delta*delta;
+   // body.Fy -= 0.2*body.Vy;
   }
 
   // force with up wall
@@ -35,7 +38,8 @@ void compute_force(Particle & body)
   delta = body.Ry + body.rad - LY;
   if (delta > 0) {
     body.Fy -= K*delta;
-    //body.Fy -= 0.2*body.Vy;
+    body.U += 0.5*K*delta*delta;
+   // body.Fy -= 0.2*body.Vy;
   }
      
   // force with right wall
@@ -43,6 +47,7 @@ void compute_force(Particle & body)
   delta = body.Rx + body.rad - LX;
   if (delta > 0) {
     body.Fx -= K*delta;
+    body.U += 0.5*K*delta*delta;
     //body.Fx -= 0.2*body.Vx;
   }
   
@@ -51,6 +56,7 @@ void compute_force(Particle & body)
   delta = body.Rx - body.rad ;
   if (delta < 0) {
     body.Fx -= K*delta;
+    body.U += 0.5*K*delta*delta;
     //body.Fx -= 0.2*body.Vx;
   }
    
@@ -59,6 +65,7 @@ void compute_force(Particle & body)
   delta = body.Rz + body.rad - LZ;
   if (delta > 0) {
     body.Fz -= K*delta;
+    body.U += 0.5*K*delta*delta;
     //body.Fz -= 0.2*body.Vz;
   }
   
@@ -66,8 +73,9 @@ void compute_force(Particle & body)
   
   delta = body.Rz - body.rad ;
   if (delta < 0) {
-    body.Fz -= K*delta;
-    //body.Fz -= 0.2*body.Vz;
+    body.Fz -= K*delta;    
+    body.U += 0.5*K*delta*delta;
+   // body.Fz -= 0.2*body.Vz;
   }
   
 
@@ -89,17 +97,21 @@ void start_integration(Particle & body, const double & dt)
   body.Rx += body.Vx*dt;
   body.Ry += body.Vy*dt;
   body.Rz += body.Vz*dt;
+
+  body.Ek = 0.5*body.mass*((body.Vx*body.Vx)+(body.Vy*body.Vy)+(body.Vz*body.Vz));
 }
 
 void print(Particle & body, double time)
 {
   std::cout << time << "  "
-            << body.Rx << "  "
-            << body.Ry << "  "
-            << body.Rz << "  "
-            << body.Vx << "  "
-            << body.Vy << "  "
-            << body.Vz << "  "
+            << body.Rx << " \t "
+            << body.Ry << " \t "
+            << body.Rz << " \t "
+            << body.Vx << " \t "
+            << body.Vy << " \t "
+            << body.Vz << " \t "
+            << body.Ek << " \t "
+            << body.U  << " \t "
+            << body.U + body.Ek << " \t "
             << "\n";
 }
-
