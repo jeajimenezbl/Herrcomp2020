@@ -25,11 +25,14 @@ int main(int argc , char * argv[])
     std::cout.setf(std::ios::scientific);
 
     int NTH=std::atoi(argv[1]);
+    double integral;
     
     auto start = std::chrono::steady_clock::now();
-    std::cout<<Integral(DX,N,NTH)<<"\n";
+    integral=Integral(DX,N,NTH);
     auto end = std::chrono::steady_clock::now();
-    print_elapsed(start,end);
+
+//-----------Nthreads------integral-----------Runtime------- 
+    std::cout<<NTH<<"\t"<<integral<<"\t"; print_elapsed(start,end);
 
     return 0;
 }
@@ -41,8 +44,7 @@ double Funcion(double x)
 
 void print_elapsed(auto start , auto end)
 {
-    std::cout<<"Elapsed time in seconds: "
-             <<std::chrono::duration_cast <std::chrono::milliseconds>
+    std::cout<<std::chrono::duration_cast <std::chrono::milliseconds>
               (end-start).count()/1000.0<<"\n";
 }
 
