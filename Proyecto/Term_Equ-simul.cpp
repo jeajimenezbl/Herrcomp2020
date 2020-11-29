@@ -62,7 +62,7 @@ void Colisionador::CalculeFuerzas(Cuerpo * Molecula){
   //--- Borrar todas las fuerzas ---
   for(i=0;i<N+4;i++)
     Molecula[i].BorreFuerza();
-  //--- Calcular Fuerzas entre pares de planetas ---
+  //--- Calcular Fuerzas entre pares de Moleculas ---
   for(i=0;i<N;i++)
     for(j=i+1;j<N+4;j++)
       CalculeFuerzaEntre(Molecula[i], Molecula[j]);
@@ -72,7 +72,7 @@ void Colisionador::CalculeFuerzaEntre(Cuerpo & Molecula1, Cuerpo & Molecula2){
   double d=norma(r21), s=Molecula1.R+Molecula2.R-d;
   if(s>0){
     vector3D n=r21*(1.0/d);
-    vector3D F2=n*(K*pow(s,1.5));
+    vector3D F2=n*(K*pow(s,1.5)); //Ley de Hertz para la colisión
     Molecula2.AdicioneFuerza(F2);   Molecula1.AdicioneFuerza(F2*(-1));
   }   
 }
@@ -109,13 +109,13 @@ int main(void){
   double m0=1, R0=2, kT=10, V0=sqrt(2*kT/m0);
   int ix,iy;
   double t,tdibujo,tmax=12*(Lx/V0),tcuadro=tmax/1000,dt=1e-3;
-  double dx=Lx/(Nx+1), dy=Ly/(Ny+1);
+  double dx=Lx/(Nx+1), dy=Ly/(Ny+1);//posiciones iniciales de las moleculas
   double Theta;
   
   InicieAnimacion(); //Dibujar
 
   //Inicializar las paredes
-  double Rpared=100*Lx, Mpared=1000*m0;
+  double Rpared=100*Lx, Mpared=10000*m0;
   //------------------(  x0,       y0,Vx0,Vy0,    m0,    R0) 
   Molecula[N+0].Inicie(Lx/2,Ly+Rpared,  0,  0,Mpared,Rpared); //Pared de arriba
   Molecula[N+1].Inicie(Lx/2,  -Rpared,  0,  0,Mpared,Rpared); //Pared de abajo
@@ -139,7 +139,7 @@ int main(void){
       tdibujo=0;
     }
 
-    //--- Muevase por PEFRL ---
+    //--- Muevase por Omelyan (PEFRL) ---
     for(i=0;i<N;i++)Molecula[i].Mueva_r(dt,epsilon);
     Hertz.CalculeFuerzas(Molecula);
     for(i=0;i<N;i++)Molecula[i].Mueva_V(dt,lambda2);
