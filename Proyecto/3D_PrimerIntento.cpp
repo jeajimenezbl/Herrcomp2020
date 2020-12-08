@@ -94,12 +94,18 @@ void InicieAnimacion(void){
 }
 void InicieCuadro(void){
     cout<<"splot 0,0,0 ";
-    cout<<" , "<<Lx/7<<"*u,0,0";        //pared de abajo
-    cout<<" , "<<Lx/7<<"*u,"<<Ly <<",0";     //pared de arriba
-    cout<<" , 0,"<<Ly/7<<"*v,0";        //pared de la izquierda
-    cout<<" , "<<Lx<<","<<Ly/7<<"*v,0"; //pared de la derecha
-    cout<<" , "<<"0,0,"<<Lz/7<<"*v";
-    cout<<" , "<<"0,"<<Ly<<","<<Lz/7<<"*v,";
+    cout<<" , "<<Lx/(2*pi)<<"*u,0,0";  
+    cout<<" , "<<Lx/(2*pi)<<"*u,"<<Ly<<",0";
+    cout<<" , "<<Lx/(2*pi)<<"*u,0,"<<Lz;
+    cout<<" , "<<Lx/(2*pi)<<"*u,"<<Ly<<","<<Lz;
+    cout<<" , 0,"<<Ly/(2*pi)<<"*u,0";
+    cout<<" , "<<Lx<<","<<Ly/(2*pi)<<"*u,0";
+    cout<<" , 0,"<<Ly/(2*pi)<<"*u,"<<Lz;
+    cout<<" , "<<Lx<<","<<Ly/(2*pi)<<"*u,"<<Lz;	
+    cout<<" , 0,0,"<<Lz/(2*pi)<<"*u";	
+    cout<<" , "<<Lx<<",0,"<<Lz/(2*pi)<<"*u";
+    cout<<" , 0,"<<Ly<<","<<Lz/(2*pi)<<"*u";
+    cout<<" , "<<Lx<<","<<Ly<<","<<Lz/(2*pi)<<"*u";
 }
 void TermineCuadro(void){
     cout<<endl;
