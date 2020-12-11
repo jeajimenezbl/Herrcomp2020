@@ -2,6 +2,7 @@
 #include <cmath>
 #include "Vector.h"
 #include <random>
+#include <omp.h>
 using namespace std;
 
 //---- declarar constantes ---
@@ -94,44 +95,33 @@ void InicieAnimacion(void){
 }
 void InicieCuadro(void){
     cout<<"splot 0,0,0 ";
-    cout<<" , "<<Lx/(2*pi)<<"*u,0,0";  
-    cout<<" , "<<Lx/(2*pi)<<"*u,"<<Ly<<",0";
-    cout<<" , "<<Lx/(2*pi)<<"*u,0,"<<Lz;
-    cout<<" , "<<Lx/(2*pi)<<"*u,"<<Ly<<","<<Lz;
-    cout<<" , 0,"<<Ly/(2*pi)<<"*u,0";
-    cout<<" , "<<Lx<<","<<Ly/(2*pi)<<"*u,0";
-    cout<<" , 0,"<<Ly/(2*pi)<<"*u,"<<Lz;
-    cout<<" , "<<Lx<<","<<Ly/(2*pi)<<"*u,"<<Lz;	
-    cout<<" , 0,0,"<<Lz/(2*pi)<<"*u";	
-    cout<<" , "<<Lx<<",0,"<<Lz/(2*pi)<<"*u";
-    cout<<" , 0,"<<Ly<<","<<Lz/(2*pi)<<"*u";
-    cout<<" , "<<Lx<<","<<Ly<<","<<Lz/(2*pi)<<"*u";
+    cout<<" , "<<Lx<<"/(2*pi)*u,0,0";  
+    cout<<" , "<<Lx<<"/(2*pi)*u,"<<Ly<<",0";
+    cout<<" , "<<Lx<<"/(2*pi)*u,0,"<<Lz;
+    cout<<" , "<<Lx<<"/(2*pi)*u,"<<Ly<<","<<Lz;
+    cout<<" , 0,"<<Ly<<"/(2*pi)*u,0";
+    cout<<" , "<<Lx<<","<<Ly<<"/(2*pi)*u,0";
+    cout<<" , 0,"<<Ly<<"/(2*pi)*u,"<<Lz;
+    cout<<" , "<<Lx<<","<<Ly<<"/(2*pi)*u,"<<Lz;	
+    cout<<" , 0,0,"<<Lz<<"/(2*pi)*u";	
+    cout<<" , "<<Lx<<",0,"<<Lz<<"/(2*pi)*u";
+    cout<<" , 0,"<<Ly<<","<<Lz<<"/(2*pi)*u";
+    cout<<" , "<<Lx<<","<<Ly<<","<<Lz<<"/(2*pi)*u";
 }
 void TermineCuadro(void){
     cout<<endl;
 }
 
-//-----------  Programa Principal --------------  
-int main(void){
-  double m0=1, R0=2, kT=1, V0=sqrt(2*kT/m0);
-  int i;
-  Cuerpo Molecula[N+6];
-  Colisionador Hertz;
-  int ix, iy, iz;
+//----------------- Funciones para contar tiempo ----------
+void print_elapsed(auto start, auto end){
+  cout.precision(6); cout.setf(ios::scientific);
+  //cout << chrono::duration_cast<chrono::milliseconds>(end-start).count()/1000.0 << "\n";
+}
 
-  mt19937 gen (0);
-  normal_distribution <double> boltz (kT/m0, kT/m0);
-  double vx, vy, vz, v;
-  
-  double t,tdibujo,tmax=12*(Lx/V0),tcuadro=tmax/1000,dt=1e-3;
-  double dx=Lx/(Nx+1), dy=Ly/(Ny+1), dz=Lz/(Nz+1);//posiciones iniciales de las moleculas
-  double Theta=0;
-  double Phi=0;
-  
-  InicieAnimacion(); //Dibujar
+//----------------- Funciones para definir paredes y moleculas ----------
+void Paredes(double masa, Cuerpo * Molecula){
+  double Rpared=1000*Lx, Mpared=9e9*masa;
 
-  //Inicializar las paredes
-  double Rpared=100*Lx, Mpared=10000*m0;
   //------------------(       x0,       y0,       z0,Vx0,Vy0,Vz0,    m0,    R0) 
   Molecula[N+0].Inicie(     Lx/2,Ly+Rpared,     Lz/2,  0,  0,  0,Mpared,Rpared); //Pared de arriba
   Molecula[N+1].Inicie(     Lx/2,  -Rpared,     Lz/2,  0,  0,  0,Mpared,Rpared); //Pared de abajo
@@ -139,20 +129,44 @@ int main(void){
   Molecula[N+3].Inicie(  -Rpared,     Ly/2,     Lz/2,  0,  0,  0,Mpared,Rpared); //Pared izquierda
   Molecula[N+4].Inicie(     Lx/2,     Ly/2,Lz+Rpared,  0,  0,  0,Mpared,Rpared); //Pared del frente
   Molecula[N+5].Inicie(     Lx/2,     Ly/2,  -Rpared,  0,  0,  0,Mpared,Rpared); //Pared del fondo
-  //Inicializar las moléculas
-  for(ix=0;ix<Nx;ix++)
-    for(iy=0;iy<Ny;iy++){
-      for(iz=0;iz<Nz;iz++){
-        vx= boltz (gen);
-        vy= boltz (gen);
-        vz= boltz (gen);
-        v = sqrt (vx*vx + vy*vy + vz*vz); //boltz dist
+}
+
+void InicializarMoleculas(double kT, double m0, double R0, Cuerpo * Molecula){
+  mt19937 gen (0);
+  normal_distribution <double> normal (kT/m0, kT/m0);
+  double vx=0, vy=0, vz=0, v=0;
+  double dx=Lx/(Nx+1), dy=Ly/(Ny+1), dz=Lz/(Nz+1);
+
+  for(int ix=0;ix<Nx;ix++){
+    for(int iy=0;iy<Ny;iy++){
+      for(int iz=0;iz<Nz;iz++){
+        vx= normal (gen);
+        vy= normal (gen);
+        vz= normal (gen);
+        v = sqrt (vx*vx + vy*vy + vz*vz); //boltzmann dist
       
-        //-----------------------(   x0,   y0,   z0,          Vx0,          Vy0,          Vz0,m0,R0)
-        //Molecula[Nx*iy+ix].Inicie((ix+1)*dx,(iy+1)*dy,v*cos(Theta),v*sin(Theta), m0,R0);//OJO
-        Molecula[Nx*Nx*ix+Ny*iy+iz].Inicie((ix+1)*dx,(iy+1)*dy,(iz+1)*dz, vx, vy, vz, m0,R0);//OJO
+        //--------------------------------(       x0,       y0,       z0,Vx0,Vy0,Vz0, m0,R0)
+        Molecula[Nx*Nx*ix+Ny*iy+iz].Inicie((ix+1)*dx,(iy+1)*dy,(iz+1)*dz, vx, vy, vz, m0,R0);
       }
     }
+  }
+}
+
+
+//-----------  Programa Principal --------------  
+int main(void){
+  double m0=1, R0=4, kT=1, V0=sqrt(2*kT/m0);
+  Cuerpo Molecula[N+6];
+  Colisionador Hertz;
+  int t=0, tdibujo=0;
+  double tmax=12*(Lx/V0),tcuadro=0.85,dt=1e-3;
+  
+  InicieAnimacion(); //Dibujar
+
+  Paredes(m0, Molecula);
+  
+  InicializarMoleculas(kT, m0, R0, Molecula);
+
   /*
   for (int ii=0; ii < N ; ++ii) {	
     //cout << ii << "\t"<< Molecula[ii].Getv() << "\n" ;
@@ -162,32 +176,32 @@ int main(void){
   
   //EVOLUCION DEL SISTEMA
   //for(t=0,tdibujo=0 ; t<tmax ; t+=dt,tdibujo+=dt){
-  for(t=0,tdibujo=0 ; t<tmax ; t+=dt ,tdibujo+=dt){
+  for(t=0, tdibujo=0; t<tmax; t+=dt ,tdibujo+=dt){
     
     //Dibujar
     if(tdibujo>tcuadro){
       
       InicieCuadro();
-      for(i=0;i<N;i++) Molecula[i].Dibujese();
+      for(int i=0; i<N; i++) Molecula[i].Dibujese();
       TermineCuadro();
       
       tdibujo=0;
     }
     
     //--- Muevase por Omelyan (PEFRL) ---
-    for(i=0;i<N;i++)Molecula[i].Mueva_r(dt,epsilon);
+    for(int i=0;i<N;i++)Molecula[i].Mueva_r(dt,epsilon);
     Hertz.CalculeFuerzas(Molecula);
-    for(i=0;i<N;i++)Molecula[i].Mueva_V(dt,lambda2);
-    for(i=0;i<N;i++)Molecula[i].Mueva_r(dt,chi);
+    for(int i=0;i<N;i++)Molecula[i].Mueva_V(dt,lambda2);
+    for(int i=0;i<N;i++)Molecula[i].Mueva_r(dt,chi);
     Hertz.CalculeFuerzas(Molecula);
-    for(i=0;i<N;i++)Molecula[i].Mueva_V(dt,lambda);
-    for(i=0;i<N;i++)Molecula[i].Mueva_r(dt,chiepsilon);
+    for(int i=0;i<N;i++)Molecula[i].Mueva_V(dt,lambda);
+    for(int i=0;i<N;i++)Molecula[i].Mueva_r(dt,chiepsilon);
     Hertz.CalculeFuerzas(Molecula);
-    for(i=0;i<N;i++)Molecula[i].Mueva_V(dt,lambda);
-    for(i=0;i<N;i++)Molecula[i].Mueva_r(dt,chi);
+    for(int i=0;i<N;i++)Molecula[i].Mueva_V(dt,lambda);
+    for(int i=0;i<N;i++)Molecula[i].Mueva_r(dt,chi);
     Hertz.CalculeFuerzas(Molecula);
-    for(i=0;i<N;i++)Molecula[i].Mueva_V(dt,lambda2);
-    for(i=0;i<N;i++)Molecula[i].Mueva_r(dt,epsilon);  
+    for(int i=0;i<N;i++)Molecula[i].Mueva_V(dt,lambda2);
+    for(int i=0;i<N;i++)Molecula[i].Mueva_r(dt,epsilon);  
   }   
   
   
